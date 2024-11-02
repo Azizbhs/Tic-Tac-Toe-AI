@@ -3,9 +3,9 @@ from tkinter import messagebox
 
 def on_click(row, col):
     global current_player
-    if board[row][col]['text'] == ' ' and not check_winner():  # Ensure spot is empty and game not over
+    if board[row][col]['text'] == ' ' and not check_winner():
         board[row][col]['text'] = current_player
-        board[row][col]['foreground'] = 'blue' if current_player == 'X' else 'red'  # X is blue, O is red
+        board[row][col]['foreground'] = 'blue' if current_player == 'X' else 'red'
         if check_winner():
             label.config(text=f"{current_player} wins!")
             messagebox.showinfo("Game Over", f"Player {current_player} wins!")
@@ -23,7 +23,6 @@ def switch_player():
     label.config(text=f"{current_player}'s turn")
 
 def check_winner():
-    # Check rows, columns, and diagonals for a win
     for i in range(3):
         if board[i][0]['text'] == board[i][1]['text'] == board[i][2]['text'] != ' ':
             return True
@@ -57,42 +56,45 @@ def reset_game():
             board[row][col]['state'] = 'normal'
 
 def go_back():
-    window.destroy()  # Close the game window for now; you can add a menu later
+    window.destroy()
 
-player1 = 'X'
-player2 = 'O'
-current_player = player1
-board = [[None, None, None], [None, None, None], [None, None, None]]
+def run_game(player_symbol, difficulty):
+    global player1, player2, current_player, board, window, label
+    player1, player2 = ('X', 'O') if player_symbol == 'X' else ('O', 'X')
+    current_player = player1
+    board = [[None, None, None], [None, None, None], [None, None, None]]
 
-window = tkinter.Tk()
-window.title('Tic-Tac-Toe')
-window.resizable(0, 0)
+    window = tkinter.Tk()
+    window.title('Tic-Tac-Toe')
+    window.resizable(0, 0)
 
-frame = tkinter.Frame(window)
-label = tkinter.Label(frame, text=current_player+"'s turn", font=('Courier New', 20), foreground='black')
+    frame = tkinter.Frame(window)
+    label = tkinter.Label(frame, text=current_player+"'s turn", font=('Courier New', 20), foreground='black')
+    label.pack()
+    frame.pack()
 
-label.pack()
-frame.pack()
+    label.grid(row=0, column=0, columnspan=3)
 
-label.grid(row=0, column=0, columnspan=3)
+    for row in range(3):
+        for col in range(3):
+            board[row][col] = tkinter.Button(frame, text=' ', font=('Arial', 40, "bold"), height=2, width=5, background='white', command=lambda row=row, col=col: on_click(row, col))
+            board[row][col].grid(row=row+1, column=col)
 
-for row in range(3):
-    for col in range(3):
-        board[row][col] = tkinter.Button(frame, text=' ', font=('Arial', 40, "bold"), height=2, width=5, background='white', command=lambda row=row, col=col: on_click(row, col))
-        board[row][col].grid(row=row+1, column=col)
+    restart_button = tkinter.Button(frame, text='Restart', font=('Courier New', 20), foreground='black', command=reset_game)
+    restart_button.grid(row=4, columnspan=3, sticky='ew')
 
-# Add Restart and Back buttons in the same row with 50/50 space
-restart_button = tkinter.Button(frame, text='Restart', font=('Courier New', 20), foreground='black', command=reset_game)
-restart_button.grid(row=4, columnspan=3, sticky='ew')
+    back_button = tkinter.Button(frame, text='Back', font=('Courier New', 20), foreground='black', command=go_back)
+    back_button.grid(row=5, columnspan=3, sticky='ew')
 
-back_button = tkinter.Button(frame, text='Back', font=('Courier New', 20), foreground='black', command=go_back)
-back_button.grid(row=5, columnspan=3, sticky='ew')
+    window.update_idletasks()
+    width = window.winfo_width()
+    height = window.winfo_height()
+    x = (window.winfo_screenwidth() // 2) - (width // 2)
+    y = (window.winfo_screenheight() // 2) - (height // 2)
+    window.geometry(f'{width}x{height}+{x}+{y}')
 
-window.update_idletasks()
-width = window.winfo_width()
-height = window.winfo_height()
-x = (window.winfo_screenwidth() // 2) - (width // 2)
-y = (window.winfo_screenheight() // 2) - (height // 2)
-window.geometry(f'{width}x{height}+{x}+{y}')
+    window.mainloop()
 
-window.mainloop()
+# Ensures that run_game only executes when called explicitly, not on import
+if __name__ == "__main__":
+    run_game('X', 'easy')  # Default parameters if you want to test directly
