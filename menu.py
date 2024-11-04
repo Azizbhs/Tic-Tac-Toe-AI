@@ -38,4 +38,11 @@ tk.Radiobutton(frame, text="Impossible", font=('Courier New', 15), variable=diff
 start_button = tk.Button(frame, text="Start Game", font=('Courier New', 20), command=start_game)
 start_button.pack(pady=20)
 
+window.update_idletasks()
+width = window.winfo_width()
+height = window.winfo_height()
+x = (window.winfo_screenwidth() // 2) - (width // 2)
+y = (window.winfo_screenheight() // 2) - (height // 2)
+window.geometry(f'{width}x{height}+{x}+{y}')
+
 window.mainloop()

@@ -1,4 +1,5 @@
 import tkinter
+import random
 from tkinter import messagebox
 
 # Global variable declarations
@@ -15,19 +16,12 @@ def on_click(row, col):
         board[row][col]['text'] = current_player
         board[row][col]['foreground'] = 'blue' if current_player == 'X' else 'red'
         
-        # Check for win or draw after the player's move
         if check_winner():
-            label.config(text=f"{current_player} wins!")
-            messagebox.showinfo("Game Over", f"Player {current_player} wins!")
-            disable_buttons()
+            end_game(current_player)
         elif check_draw():
-            label.config(text="It's a draw!")
-            messagebox.showinfo("Game Over", "It's a draw!")
-            disable_buttons()
+           end_game()
         else:
-            # Switch to the other player
             switch_player()
-            # If it's the bot's turn, call bot_move
             if current_player == player2:
                 bot_move()
 
@@ -73,10 +67,16 @@ def reset_game():
 def go_back():
     window.destroy()  
 
+def end_game(winner=None):
+    if winner:
+        label.config(text=f"{winner} wins!")
+        messagebox.showinfo("Game Over", f"Player {winner} wins!")
+    else:
+        label.config(text="It's a draw!")
+        messagebox.showinfo("Game Over", "It's a draw!")
+    disable_buttons()
+
 def evaluate_board(state):
-    """
-    Assigns a score based on whether player1 or player2 wins in the current state.
-    """
     for i in range(3):
         if state[i][0]['text'] == state[i][1]['text'] == state[i][2]['text'] != ' ':
             return 1 if state[i][0]['text'] == player2 else -1
@@ -87,6 +87,12 @@ def evaluate_board(state):
     if state[0][2]['text'] == state[1][1]['text'] == state[2][0]['text'] != ' ':
         return 1 if state[0][2]['text'] == player2 else -1
     return 0
+
+def random_move():
+    empty_cells = [(row, col) for row in range(3) for col in range(3) if board[row][col]['text'] == ' ']
+    row, col = random.choice(empty_cells)
+    board[row][col]['text'] = player2
+    board[row][col]['foreground'] = 'blue' if player2 == 'X' else 'red'
 
 def minimax(state, depth, is_maximizing):
     score = evaluate_board(state)
@@ -126,69 +132,58 @@ is_bot_first_move = True
 
 def bot_move():
     global is_bot_first_move
-    
-    # If it's the bot's first move, prioritize the center or a random corner
     if is_bot_first_move:
         is_bot_first_move = False
         if board[1][1]['text'] == ' ':
             board[1][1]['text'] = player2
-            board[1][1]['foreground'] = 'red'  # Set bot color
+            board[1][1]['foreground'] = 'blue' if player2 == 'X' else 'red'
         else:
-            board[0][0]['text'] = player2
-            board[0][0]['foreground'] = 'red'  # Set bot color
-
-        # Check for win or draw after this immediate move
+            corners = [(0, 0), (0, 2), (2, 0), (2, 2)]
+            row, col = random.choice(corners)
+            board[row][col]['text'] = player2
+            board[row][col]['foreground'] = 'blue' if player2 == 'X' else 'red'
         if check_winner():
-            label.config(text=f"{player2} wins!")
-            messagebox.showinfo("Game Over", f"Player {player2} wins!")
-            disable_buttons()
+            end_game(player2)
         elif check_draw():
-            label.config(text="It's a draw!")
-            messagebox.showinfo("Game Over", "It's a draw!")
-            disable_buttons()
+            end_game()
         else:
-            switch_player()  # Pass turn back to the player
-        return  # Exit after taking the center
+            switch_player() 
+        return 
 
-    # If center is not available, proceed with minimax as usual
-    best_score = -1000
-    move = (-1, -1)
-
-    for row in range(3):
-        for col in range(3):
-            if board[row][col]['text'] == ' ':
-                # Simulate bot move
-                board[row][col]['text'] = player2
-                score = minimax(board, 0, False)  # Start minimax with player's turn
-                board[row][col]['text'] = ' '  # Undo move
-                
-                # Update best move if the score is higher
-                if score > best_score:
-                    best_score = score
-                    move = (row, col)
-
-    # Make the best move for the bot
-    if move != (-1, -1):
-        row, col = move
-        board[row][col]['text'] = player2
-        board[row][col]['foreground'] = 'red'  # Set bot color
-
-    # Check if the bot's move resulted in a win or draw
-    if check_winner():
-        label.config(text=f"{player2} wins!")
-        messagebox.showinfo("Game Over", f"Player {player2} wins!")
-        disable_buttons()
-    elif check_draw():
-        label.config(text="It's a draw!")
-        messagebox.showinfo("Game Over", "It's a draw!")
-        disable_buttons()
+    if difficulty == "easy" or (difficulty == "normal" and random.random() <= 0.4):
+        #Choose any random empty cell
+        random_move()
     else:
-        switch_player()  # Pass turn back to the player
+        # Impossible or 60% chance for "normal" difficulty
+        best_score = -1000
+        move = (-1, -1)
+        for row in range(3):
+            for col in range(3):
+                if board[row][col]['text'] == ' ':
+                    board[row][col]['text'] = player2
+                    score = minimax(board, 0, False)
+                    board[row][col]['text'] = ' ' 
+                    if score > best_score:
+                        best_score = score
+                        move = (row, col)
+        if move != (-1, -1):
+            row, col = move
+            board[row][col]['text'] = player2
+            board[row][col]['foreground'] = 'blue' if player2 == 'X' else 'red'
+
+    if check_winner():
+        end_game(player2)
+    elif check_draw():
+        end_game()
+    else:
+        switch_player() 
         
-def run_game(player_symbol, difficulty):
-    global player1, player2, current_player, board, window, label
+def run_game(player_symbol, selected_difficulty):
+    global player1, player2, current_player, board, window, label, is_bot_first_move, difficulty
     player1, player2 = ('X', 'O') if player_symbol == 'X' else ('O', 'X')
-    current_player = player1
+    current_player = 'X' 
+    is_bot_first_move = True
+    difficulty = selected_difficulty
     board = [[None, None, None], [None, None, None], [None, None, None]]
 
     window = tkinter.Tk()
@@ -198,20 +193,17 @@ def run_game(player_symbol, difficulty):
     frame = tkinter.Frame(window)
     frame.grid(row=0, column=0, padx=10, pady=10)
 
-    # Label for current player
     label = tkinter.Label(frame, text=f"{current_player}'s turn", font=('Courier New', 20), foreground='black')
     label.grid(row=0, column=0, columnspan=3)
 
-    # Create the Tic-Tac-Toe board buttons
     for row in range(3):
         for col in range(3):
             board[row][col] = tkinter.Button(
                 frame, text=' ', font=('Arial', 40, "bold"), height=2, width=5, background='white',
                 command=lambda row=row, col=col: on_click(row, col)
             )
-            board[row][col].grid(row=row+1, column=col)  # Button rows start from row 1
+            board[row][col].grid(row=row+1, column=col) 
 
-    # Restart and Back buttons
     restart_button = tkinter.Button(frame, text='Restart', font=('Courier New', 20), foreground='black', command=reset_game)
     restart_button.grid(row=4, column=0, columnspan=3, sticky='ew', pady=(10, 0))
 
@@ -225,5 +217,8 @@ def run_game(player_symbol, difficulty):
     x = (window.winfo_screenwidth() // 2) - (width // 2)
     y = (window.winfo_screenheight() // 2) - (height // 2)
     window.geometry(f'{width}x{height}+{x}+{y}')
+
+    if player2 == 'X':
+        bot_move()
 
     window.mainloop()
